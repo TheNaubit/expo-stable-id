@@ -42,6 +42,7 @@ jest.mock('../generators/IDGenerator', () => {
   };
 });
 
+import { _disposeAllStoresForTesting } from '../StableIdStore';
 import { StableIdProvider } from '../StableIdProvider';
 import { useStableId } from '../useStableId';
 
@@ -62,6 +63,7 @@ afterAll(() => {
 });
 
 beforeEach(() => {
+  _disposeAllStoresForTesting();
   jest.clearAllMocks();
   mockCloudStore = {};
   mockSecureStore = {};

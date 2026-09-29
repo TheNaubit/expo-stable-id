@@ -40,7 +40,7 @@ jest.mock('../generators/IDGenerator', () => {
   };
 });
 
-import { StableIdStore } from '../StableIdStore';
+import { StableIdStore, _disposeAllStoresForTesting } from '../StableIdStore';
 import { getString as cloudGetString, setString as cloudSetString, addChangeListener as cloudAddChangeListener } from '@nauverse/expo-cloud-settings';
 import { getItemAsync, setItemAsync } from 'expo-secure-store';
 
@@ -51,6 +51,7 @@ function emitCloudChange(changedKeys: string[], reason = 'serverChange') {
 }
 
 beforeEach(() => {
+  _disposeAllStoresForTesting();
   jest.clearAllMocks();
   mockCloudStore = {};
   mockSecureStore = {};
@@ -348,6 +349,14 @@ describe('StableIdStore', () => {
   });
 
   describe('input validation', () => {
+    test('identify throws a clear error on non-string input', async () => {
+      const store = new StableIdStore();
+      await store.configure();
+      expect(() => store.identify(123 as unknown as string)).toThrow('id must be a non-empty string');
+      expect(() => store.identify(undefined as unknown as string)).toThrow('id must be a non-empty string');
+      store.dispose();
+    });
+
     test('identify throws on empty string', async () => {
       const store = new StableIdStore();
       await store.configure();
@@ -531,5 +540,86 @@ describe('StableIdStore hardening', () => {
     mockCloudStore['_StableID_Identifier'] = 'other-account-id';
     emitCloudChange([], 'accountChange');
     expect(store.getId()).toBe('other-account-id');
+  });
+});
+
+describe('StableIdStore identity set during configure', () => {
+  test('identify() while configure is pending is not overwritten', async () => {
+    mockSecureStore['_StableID_Identifier'] = 'stored-id';
+    const store = new StableIdStore();
+    const listener = jest.fn();
+    store.addChangeListener(listener);
+    const pending = store.configure();
+    store.identify('explicit-id');
+    const resolved = await pending;
+    expect(resolved).toBe('explicit-id');
+    expect(store.getId()).toBe('explicit-id');
+    expect(mockCloudStore['_StableID_Identifier']).toBe('explicit-id');
+    expect(mockSecureStore['_StableID_Identifier']).toBe('explicit-id');
+    store.dispose();
+  });
+
+  test('generateNewId() while configure is pending is not overwritten', async () => {
+    mockSecureStore['_StableID_Identifier'] = 'stored-id';
+    mockGenerateModule.__mockGenerate.mockReturnValue('fresh-id');
+    const store = new StableIdStore();
+    const pending = store.configure();
+    store.generateNewId();
+    await expect(pending).resolves.toBe('fresh-id');
+    expect(store.getId()).toBe('fresh-id');
+    store.dispose();
+  });
+});
+
+describe('StableIdStore peers in the same runtime', () => {
+  test('identify() on one store updates other configured stores', async () => {
+    const functional = new StableIdStore();
+    const provider = new StableIdStore();
+    await functional.configure();
+    await provider.configure();
+    const storeListener = jest.fn();
+    const changeListener = jest.fn();
+    provider.subscribe(storeListener);
+    provider.addChangeListener(changeListener);
+
+    functional.identify('user-42');
+
+    expect(provider.getId()).toBe('user-42');
+    expect(storeListener).toHaveBeenCalled();
+    expect(changeListener).toHaveBeenCalledWith({
+      previousId: 'mock-generated-uuid',
+      newId: 'user-42',
+      source: 'manual',
+    });
+    functional.dispose();
+    provider.dispose();
+  });
+
+  test('a cloud change fires one event per store', async () => {
+    const a = new StableIdStore();
+    const b = new StableIdStore();
+    await a.configure();
+    await b.configure();
+    const listenerB = jest.fn();
+    b.addChangeListener(listenerB);
+
+    mockCloudStore['_StableID_Identifier'] = 'from-cloud';
+    emitCloudChange(['_StableID_Identifier']);
+
+    expect(b.getId()).toBe('from-cloud');
+    expect(listenerB).toHaveBeenCalledTimes(1);
+    a.dispose();
+    b.dispose();
+  });
+
+  test('disposed stores stop receiving peer updates', async () => {
+    const a = new StableIdStore();
+    const b = new StableIdStore();
+    await a.configure();
+    await b.configure();
+    b.dispose();
+    a.identify('after-dispose');
+    expect(b.getId()).toBe('mock-generated-uuid');
+    a.dispose();
   });
 });

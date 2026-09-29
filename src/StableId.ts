@@ -1,5 +1,5 @@
 import type { StableIdChangeEvent, StableIdConfig } from './StableId.types';
-import { StableIdStore } from './StableIdStore';
+import { StableIdStore, _disposeAllStoresForTesting } from './StableIdStore';
 
 let store: StableIdStore | null = null;
 let configurePromise: Promise<string> | null = null;
@@ -73,4 +73,5 @@ export function _resetForTesting(): void {
   }
   store = null;
   configurePromise = null;
+  _disposeAllStoresForTesting();
 }
