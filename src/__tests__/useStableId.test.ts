@@ -42,9 +42,15 @@ jest.mock('../generators/IDGenerator', () => {
   };
 });
 
-import { _disposeAllStoresForTesting } from '../StableIdStore';
 import { StableIdProvider } from '../StableIdProvider';
 import { useStableId } from '../useStableId';
+import {
+  _resetForTesting,
+  getId,
+  identify,
+  setWillChangeHandler,
+  addChangeListener,
+} from '../StableId';
 
 const originalConsoleError = console.error;
 beforeAll(() => {
@@ -63,7 +69,7 @@ afterAll(() => {
 });
 
 beforeEach(() => {
-  _disposeAllStoresForTesting();
+  _resetForTesting();
   jest.clearAllMocks();
   mockCloudStore = {};
   mockSecureStore = {};
@@ -112,7 +118,7 @@ describe('StableIdProvider', () => {
     }).toThrow('useStableId requires <StableIdProvider>');
   });
 
-  test('cleans up on unmount', async () => {
+  test('keeps one shared cloud subscription across unmount and remount', async () => {
     let renderer: TestRenderer.ReactTestRenderer;
     TestRenderer.act(() => {
       renderer = TestRenderer.create(
@@ -120,12 +126,19 @@ describe('StableIdProvider', () => {
       );
     });
     await flushPromises();
+    expect(mockCloudListeners.length).toBe(1);
 
     TestRenderer.act(() => {
       renderer.unmount();
     });
-    // Cloud listener should be cleaned up
-    expect(mockCloudListeners.length).toBe(0);
+    // The store is app-wide, so the functional API keeps working after unmount
+    expect(mockCloudListeners.length).toBe(1);
+
+    TestRenderer.act(() => {
+      TestRenderer.create(React.createElement(StableIdProvider, null, null));
+    });
+    await flushPromises();
+    expect(mockCloudListeners.length).toBe(1);
   });
 });
 
@@ -182,3 +195,31 @@ describe('useStableId', () => {
   });
 });
 
+
+describe('provider and functional API share one store', () => {
+  test('hook and getId() return the same id', async () => {
+    const { result } = renderHook(() => useStableId());
+    await flushPromises();
+    expect(result.current[0]).toBeTruthy();
+    expect(getId()).toBe(result.current[0]);
+  });
+
+  test('functional identify() updates the hook', async () => {
+    const { result } = renderHook(() => useStableId());
+    await flushPromises();
+    TestRenderer.act(() => identify('user-42'));
+    expect(result.current[0]).toBe('user-42');
+  });
+
+  test('hook identify() reaches functional listeners and handler', async () => {
+    const { result } = renderHook(() => useStableId());
+    await flushPromises();
+    const listener = jest.fn();
+    addChangeListener(listener);
+    setWillChangeHandler((_current, candidate) => `${candidate}-checked`);
+    TestRenderer.act(() => result.current[1].identify('from-hook'));
+    expect(result.current[0]).toBe('from-hook-checked');
+    expect(getId()).toBe('from-hook-checked');
+    expect(listener).toHaveBeenCalledTimes(1);
+  });
+});

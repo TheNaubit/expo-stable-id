@@ -1,77 +1,64 @@
 import type { StableIdChangeEvent, StableIdConfig } from './StableId.types';
-import { StableIdStore, _disposeAllStoresForTesting } from './StableIdStore';
+import { StableIdStore } from './StableIdStore';
 
-let store: StableIdStore | null = null;
-let configurePromise: Promise<string> | null = null;
+// One store per app: StableIdProvider and the functional API share it, so they
+// always see the same id, listeners and will-change handler
+let sharedStore: StableIdStore | null = null;
 
-function getStore(): StableIdStore {
-  if (store === null) {
+export function getSharedStore(): StableIdStore {
+  if (sharedStore === null) {
+    sharedStore = new StableIdStore();
+  }
+  return sharedStore;
+}
+
+function getConfiguredStore(): StableIdStore {
+  const store = getSharedStore();
+  if (!store.isConfigured()) {
     throw new Error('StableId: call configure() before using other methods');
   }
   return store;
 }
 
-export async function configure(config?: StableIdConfig): Promise<string> {
-  if (configurePromise !== null) {
-    return configurePromise;
-  }
-  const newStore = new StableIdStore();
-  configurePromise = newStore.configure(config).then((id) => {
-    store = newStore;
-    return id;
-  }).catch((error) => {
-    configurePromise = null;
-    newStore.dispose();
-    throw error;
-  });
-  return configurePromise;
+export function configure(config?: StableIdConfig): Promise<string> {
+  return getSharedStore().configure(config);
 }
 
 export function getId(): string | null {
-  return store?.getId() ?? null;
+  return sharedStore?.getId() ?? null;
 }
 
 export function identify(id: string): void {
-  getStore().identify(id);
+  getConfiguredStore().identify(id);
 }
 
 export function generateNewId(): string {
-  return getStore().generateNewId();
+  return getConfiguredStore().generateNewId();
 }
 
 export function isConfigured(): boolean {
-  return store?.isConfigured() ?? false;
+  return sharedStore?.isConfigured() ?? false;
 }
 
-export async function hasStoredId(): Promise<boolean> {
-  if (store !== null) {
-    return store.hasStoredId();
-  }
-  const tempStore = new StableIdStore();
-  const result = await tempStore.hasStoredId();
-  tempStore.dispose();
-  return result;
+export function hasStoredId(): Promise<boolean> {
+  return getSharedStore().hasStoredId();
 }
 
 export function addChangeListener(
   callback: (event: StableIdChangeEvent) => void
 ): { remove: () => void } {
-  const unsubscribe = getStore().addChangeListener(callback);
+  const unsubscribe = getConfiguredStore().addChangeListener(callback);
   return { remove: unsubscribe };
 }
 
 export function setWillChangeHandler(
   handler: ((currentId: string, candidateId: string) => string | null) | null
 ): void {
-  getStore().setWillChangeHandler(handler);
+  getConfiguredStore().setWillChangeHandler(handler);
 }
 
 // For testing: reset the singleton
 export function _resetForTesting(): void {
-  if (store) {
-    store.dispose();
-  }
-  store = null;
-  configurePromise = null;
-  _disposeAllStoresForTesting();
+  sharedStore?.dispose();
+  sharedStore = null;
 }

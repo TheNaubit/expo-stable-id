@@ -1,7 +1,8 @@
-import React, { createContext, useContext, useEffect, useRef, useState, useSyncExternalStore, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useSyncExternalStore, useCallback } from 'react';
 
 import type { StableIdConfig } from './StableId.types';
-import { StableIdStore } from './StableIdStore';
+import { getSharedStore } from './StableId';
+import type { StableIdStore } from './StableIdStore';
 
 const StableIdContext = createContext<StableIdStore | null>(null);
 
@@ -11,11 +12,7 @@ export interface StableIdProviderProps {
 }
 
 export function StableIdProvider({ config, children }: StableIdProviderProps) {
-  const storeRef = useRef<StableIdStore | null>(null);
-  if (storeRef.current === null) {
-    storeRef.current = new StableIdStore();
-  }
-  const store = storeRef.current;
+  const store = getSharedStore();
 
   const [, setReady] = useState(false);
 
@@ -29,8 +26,8 @@ export function StableIdProvider({ config, children }: StableIdProviderProps) {
       // configure() failed - store remains unconfigured, getId() returns null
     });
     return () => {
+      // The store is app-wide (shared with the functional API), so it is not disposed here
       disposed = true;
-      store.dispose();
     };
     // config is intentionally excluded: configure() is idempotent (only first call takes effect).
     // Including config would cause dispose/re-configure cycles on unstable object references.

@@ -40,7 +40,7 @@ jest.mock('../generators/IDGenerator', () => {
   };
 });
 
-import { StableIdStore, _disposeAllStoresForTesting } from '../StableIdStore';
+import { StableIdStore } from '../StableIdStore';
 import { getString as cloudGetString, setString as cloudSetString, addChangeListener as cloudAddChangeListener } from '@nauverse/expo-cloud-settings';
 import { getItemAsync, setItemAsync } from 'expo-secure-store';
 
@@ -51,7 +51,6 @@ function emitCloudChange(changedKeys: string[], reason = 'serverChange') {
 }
 
 beforeEach(() => {
-  _disposeAllStoresForTesting();
   jest.clearAllMocks();
   mockCloudStore = {};
   mockSecureStore = {};
@@ -568,58 +567,5 @@ describe('StableIdStore identity set during configure', () => {
     await expect(pending).resolves.toBe('fresh-id');
     expect(store.getId()).toBe('fresh-id');
     store.dispose();
-  });
-});
-
-describe('StableIdStore peers in the same runtime', () => {
-  test('identify() on one store updates other configured stores', async () => {
-    const functional = new StableIdStore();
-    const provider = new StableIdStore();
-    await functional.configure();
-    await provider.configure();
-    const storeListener = jest.fn();
-    const changeListener = jest.fn();
-    provider.subscribe(storeListener);
-    provider.addChangeListener(changeListener);
-
-    functional.identify('user-42');
-
-    expect(provider.getId()).toBe('user-42');
-    expect(storeListener).toHaveBeenCalled();
-    expect(changeListener).toHaveBeenCalledWith({
-      previousId: 'mock-generated-uuid',
-      newId: 'user-42',
-      source: 'manual',
-    });
-    functional.dispose();
-    provider.dispose();
-  });
-
-  test('a cloud change fires one event per store', async () => {
-    const a = new StableIdStore();
-    const b = new StableIdStore();
-    await a.configure();
-    await b.configure();
-    const listenerB = jest.fn();
-    b.addChangeListener(listenerB);
-
-    mockCloudStore['_StableID_Identifier'] = 'from-cloud';
-    emitCloudChange(['_StableID_Identifier']);
-
-    expect(b.getId()).toBe('from-cloud');
-    expect(listenerB).toHaveBeenCalledTimes(1);
-    a.dispose();
-    b.dispose();
-  });
-
-  test('disposed stores stop receiving peer updates', async () => {
-    const a = new StableIdStore();
-    const b = new StableIdStore();
-    await a.configure();
-    await b.configure();
-    b.dispose();
-    a.identify('after-dispose');
-    expect(b.getId()).toBe('mock-generated-uuid');
-    a.dispose();
   });
 });

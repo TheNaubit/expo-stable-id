@@ -48,6 +48,8 @@ export default {
 
 > **Note:** `StableIdProvider` does **not** require `CloudSettingsProvider` from `@nauverse/expo-cloud-settings` as an ancestor. Internally it uses the functional API (`getString`, `setString`, `addChangeListener`) from `@nauverse/expo-cloud-settings` directly. If your app also uses `CloudSettingsProvider` for its own React hooks (`useCloudSetting*`), both providers are independent and can be placed in any order.
 
+> **Note:** `StableIdProvider` and the functional API share a single app-wide store, so `useStableId()`, `getId()`, change listeners and `setWillChangeHandler()` always see the same ID. Configuration is applied once: whichever of `configure()` or `StableIdProvider` runs first sets the `config`, and later configs are ignored.
+
 ```tsx
 import { StableIdProvider, useStableId } from '@nauverse/expo-stable-id';
 

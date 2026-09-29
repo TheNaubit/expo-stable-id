@@ -27,10 +27,6 @@ type ChangeCallback = (event: StableIdChangeEvent) => void;
 
 const STORAGE_KEY = '_StableID_Identifier';
 
-// Configured stores in this JS runtime (e.g. the functional singleton and a provider).
-// Local writes never come back through the cloud listener, so peers are told directly.
-const liveStores = new Set<StableIdStore>();
-
 export class StableIdStore {
   private id: string | null = null;
   private generator: IDGenerator = new StandardGenerator();
@@ -127,9 +123,6 @@ export class StableIdStore {
     }
     return this.configurePromise.then((id) => {
       this.ensureCloudSubscription();
-      if (!this.disposed) {
-        liveStores.add(this);
-      }
       return id;
     });
   }
@@ -221,23 +214,7 @@ export class StableIdStore {
     this.persist(finalId);
     this.notifyStore();
     this.notifyChange(previousId, finalId, source);
-    for (const peer of Array.from(liveStores)) {
-      if (peer !== this) {
-        peer.adoptFromPeer(finalId, source);
-      }
-    }
     return finalId;
-  }
-
-  // The originating store already applied its will-change handler and persisted the id
-  private adoptFromPeer(id: string, source: ChangeSource): void {
-    if (this.disposed || id === this.id) {
-      return;
-    }
-    const previousId = this.id;
-    this.id = id;
-    this.notifyStore();
-    this.notifyChange(previousId, id, source);
   }
 
   identify(id: string): void {
@@ -277,19 +254,11 @@ export class StableIdStore {
 
   dispose(): void {
     this.disposed = true;
-    liveStores.delete(this);
     if (this.cloudSubscription) {
       this.cloudSubscription.remove();
       this.cloudSubscription = null;
     }
     this.changeListeners.clear();
     this.storeListeners.clear();
-  }
-}
-
-// For testing: dispose every configured store so none leak between tests
-export function _disposeAllStoresForTesting(): void {
-  for (const store of Array.from(liveStores)) {
-    store.dispose();
   }
 }
