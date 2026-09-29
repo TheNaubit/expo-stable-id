@@ -36,11 +36,24 @@ export class StableIdStore {
   private changeListeners = new Set<ChangeCallback>();
   private storeListeners = new Set<Listener>();
   private cloudSubscription: Subscription | null = null;
+  private configurePromise: Promise<string> | null = null;
+  private disposed = false;
+
+  private static isUsable(value: string | null | undefined): value is string {
+    return typeof value === 'string' && value.trim().length > 0;
+  }
+
+  private static reportAsync(error: unknown): void {
+    // Surface listener errors without breaking the remaining listeners
+    setTimeout(() => {
+      throw error;
+    }, 0);
+  }
 
   private async readStored(): Promise<string | null> {
     try {
       const cloudValue = cloudGetString(STORAGE_KEY);
-      if (cloudValue !== null) {
+      if (StableIdStore.isUsable(cloudValue)) {
         return cloudValue;
       }
     } catch {
@@ -49,7 +62,7 @@ export class StableIdStore {
 
     try {
       const localValue = await secureGetItem(STORAGE_KEY);
-      if (localValue !== null) {
+      if (StableIdStore.isUsable(localValue)) {
         return localValue;
       }
     } catch {
@@ -73,14 +86,22 @@ export class StableIdStore {
 
   private notifyChange(previousId: string | null, newId: string, source: ChangeSource): void {
     const event: StableIdChangeEvent = { previousId, newId, source };
-    for (const listener of this.changeListeners) {
-      listener(event);
+    for (const listener of Array.from(this.changeListeners)) {
+      try {
+        listener(event);
+      } catch (error) {
+        StableIdStore.reportAsync(error);
+      }
     }
   }
 
   private notifyStore(): void {
-    for (const listener of this.storeListeners) {
-      listener();
+    for (const listener of Array.from(this.storeListeners)) {
+      try {
+        listener();
+      } catch (error) {
+        StableIdStore.reportAsync(error);
+      }
     }
   }
 
@@ -92,11 +113,21 @@ export class StableIdStore {
     return result ?? candidateId;
   }
 
-  async configure(config?: StableIdConfig): Promise<string> {
-    if (this.configured) {
-      return this.id!;
+  configure(config?: StableIdConfig): Promise<string> {
+    this.disposed = false;
+    if (this.configurePromise === null) {
+      this.configurePromise = this.runConfigure(config).catch((error) => {
+        this.configurePromise = null;
+        throw error;
+      });
     }
+    return this.configurePromise.then((id) => {
+      this.ensureCloudSubscription();
+      return id;
+    });
+  }
 
+  private async runConfigure(config?: StableIdConfig): Promise<string> {
     if (config?.generator) {
       this.generator = config.generator;
     }
@@ -107,11 +138,11 @@ export class StableIdStore {
     const stored = await this.readStored();
     let resolvedId: string;
 
-    if (config?.id) {
+    if (StableIdStore.isUsable(config?.id)) {
       if (this.policy === 'preferStored' && stored !== null) {
         resolvedId = stored;
       } else {
-        resolvedId = config.id;
+        resolvedId = config!.id!;
       }
     } else {
       resolvedId = stored ?? this.generator.generate();
@@ -121,16 +152,22 @@ export class StableIdStore {
     this.configured = true;
     this.persist(resolvedId);
     this.notifyStore();
-
-    this.cloudSubscription = cloudAddChangeListener((event) => {
-      this.onCloudChange(event.changedKeys);
-    });
-
     return resolvedId;
   }
 
-  private onCloudChange(changedKeys: readonly string[]): void {
-    if (!changedKeys.includes(STORAGE_KEY)) {
+  private ensureCloudSubscription(): void {
+    if (this.disposed || this.cloudSubscription !== null) {
+      return;
+    }
+    this.cloudSubscription = cloudAddChangeListener((event) => {
+      this.onCloudChange(event.changedKeys, event.reason);
+    });
+  }
+
+  private onCloudChange(changedKeys: readonly string[], reason?: string): void {
+    // An account change may report no keys even though every value changed
+    const affectsAll = reason === 'accountChange' || changedKeys.length === 0;
+    if (!affectsAll && !changedKeys.includes(STORAGE_KEY)) {
       return;
     }
 
@@ -208,6 +245,7 @@ export class StableIdStore {
   }
 
   dispose(): void {
+    this.disposed = true;
     if (this.cloudSubscription) {
       this.cloudSubscription.remove();
       this.cloudSubscription = null;

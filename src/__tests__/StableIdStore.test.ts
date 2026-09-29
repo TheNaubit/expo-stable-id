@@ -467,3 +467,69 @@ describe('StableIdStore', () => {
     });
   });
 });
+
+describe('StableIdStore hardening', () => {
+  test('concurrent configure calls share one run and one cloud subscription', async () => {
+    const store = new StableIdStore();
+    const [a, b] = await Promise.all([store.configure(), store.configure()]);
+    expect(a).toBe(b);
+    expect(cloudAddChangeListener).toHaveBeenCalledTimes(1);
+    expect(mockCloudListeners).toHaveLength(1);
+  });
+
+  test('dispose during configure does not leak a cloud subscription', async () => {
+    const store = new StableIdStore();
+    const pending = store.configure();
+    store.dispose();
+    await pending;
+    expect(mockCloudListeners).toHaveLength(0);
+  });
+
+  test('configure after dispose re-subscribes (StrictMode remount)', async () => {
+    const store = new StableIdStore();
+    const pending = store.configure();
+    store.dispose();
+    await store.configure();
+    await pending;
+    expect(mockCloudListeners).toHaveLength(1);
+  });
+
+  test('ignores empty or whitespace stored values', async () => {
+    mockCloudStore['_StableID_Identifier'] = '   ';
+    mockSecureStore['_StableID_Identifier'] = 'secure-id';
+    const store = new StableIdStore();
+    expect(await store.configure()).toBe('secure-id');
+  });
+
+  test('ignores whitespace config id', async () => {
+    const store = new StableIdStore();
+    expect(await store.configure({ id: '  ' })).toBe('mock-generated-uuid');
+  });
+
+  test('a throwing change listener does not block other listeners', async () => {
+    jest.useFakeTimers();
+    try {
+      const store = new StableIdStore();
+      await store.configure();
+      const second = jest.fn();
+      store.addChangeListener(() => {
+        throw new Error('boom');
+      });
+      store.addChangeListener(second);
+      store.identify('new-id');
+      expect(store.getId()).toBe('new-id');
+      expect(second).toHaveBeenCalledTimes(1);
+      expect(() => jest.runAllTimers()).toThrow('boom');
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  test('account change with no changed keys re-reads the stored id', async () => {
+    const store = new StableIdStore();
+    await store.configure();
+    mockCloudStore['_StableID_Identifier'] = 'other-account-id';
+    emitCloudChange([], 'accountChange');
+    expect(store.getId()).toBe('other-account-id');
+  });
+});

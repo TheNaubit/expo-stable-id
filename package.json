@@ -38,22 +38,22 @@
   "author": "TheNaubit",
   "homepage": "https://github.com/TheNaubit/expo-stable-id",
   "peerDependencies": {
+    "@nauverse/expo-cloud-settings": ">=1.3.2",
     "expo": "*",
-    "react": ">=18.0.0",
-    "react-native": "*",
-    "@nauverse/expo-cloud-settings": ">=1.3.1",
+    "expo-crypto": "*",
     "expo-secure-store": "*",
-    "expo-crypto": "*"
+    "react": ">=18.0.0",
+    "react-native": "*"
   },
   "devDependencies": {
+    "@nauverse/expo-cloud-settings": "^1.3.2",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
     "@types/react": "~19.1.0",
     "expo": "^54.0.27",
+    "expo-crypto": "latest",
     "expo-module-scripts": "^5.0.8",
     "expo-secure-store": "latest",
-    "expo-crypto": "latest",
-    "@nauverse/expo-cloud-settings": "latest",
     "react": "^19.1.0",
     "react-native": "0.81.5",
     "semantic-release": "^25.0.3"
