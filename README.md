@@ -1,8 +1,9 @@
 # @nauverse/expo-stable-id
 
-[![npm version](https://img.shields.io/npm/v/@nauverse/expo-stable-id.svg)](https://www.npmjs.com/package/@nauverse/expo-stable-id)
+[![npm version](https://img.shields.io/npm/v/@nauverse/expo-stable-id)](https://www.npmjs.com/package/@nauverse/expo-stable-id)
 [![CI](https://github.com/TheNaubit/expo-stable-id/actions/workflows/ci.yml/badge.svg)](https://github.com/TheNaubit/expo-stable-id/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Release](https://github.com/TheNaubit/expo-stable-id/actions/workflows/release.yml/badge.svg)](https://github.com/TheNaubit/expo-stable-id/actions/workflows/release.yml)
+[![License: MIT](https://img.shields.io/npm/l/@nauverse/expo-stable-id)](https://github.com/TheNaubit/expo-stable-id/blob/main/LICENSE)
 
 Persistent, cross-device user identifier for React Native/Expo. Port of [StableID](https://github.com/codykerns/StableID) (Swift) to the Expo ecosystem, big thanks to him for that awesome lib!
 
