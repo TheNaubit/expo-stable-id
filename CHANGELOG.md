@@ -1,3 +1,10 @@
+## [2.0.1](https://github.com/TheNaubit/expo-stable-id/compare/v2.0.0...v2.0.1) (2026-09-29)
+
+
+### Bug Fixes
+
+* make configure idempotent under concurrency and harden stored-id handling ([ce6d1af](https://github.com/TheNaubit/expo-stable-id/commit/ce6d1af16ad615e504ee8f769ead44a760ad1661))
+
 # [2.0.0](https://github.com/TheNaubit/expo-stable-id/compare/v1.0.3...v2.0.0) (2026-02-07)
 
 
