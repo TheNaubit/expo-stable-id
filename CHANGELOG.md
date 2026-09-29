@@ -1,3 +1,11 @@
+## [2.0.2](https://github.com/TheNaubit/expo-stable-id/compare/v2.0.1...v2.0.2) (2026-09-29)
+
+
+### Bug Fixes
+
+* keep ids set during configure, sync stores in one runtime, and update cloud-settings ([c62eaca](https://github.com/TheNaubit/expo-stable-id/commit/c62eaca30dfb315b972a388bca9a1d7488ca3b74))
+* share one app-wide store between StableIdProvider and the functional API ([8f99d8e](https://github.com/TheNaubit/expo-stable-id/commit/8f99d8ecb0e136a3427d112ae0440d552eef4f26))
+
 ## [2.0.1](https://github.com/TheNaubit/expo-stable-id/compare/v2.0.0...v2.0.1) (2026-09-29)
 
 

@@ -1,6 +1,6 @@
 {
   "name": "@nauverse/expo-stable-id",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Persistent cross-device user identifier for Expo (port of StableID)",
   "main": "build/index.js",
   "types": "build/index.d.ts",
