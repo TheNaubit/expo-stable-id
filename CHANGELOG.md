@@ -1,3 +1,10 @@
+## [2.0.3](https://github.com/TheNaubit/expo-stable-id/compare/v2.0.2...v2.0.3) (2026-09-30)
+
+
+### Bug Fixes
+
+* **deps:** support Expo SDK 57 and expo-cloud-settings 1.3.4 ([bbb3c2c](https://github.com/TheNaubit/expo-stable-id/commit/bbb3c2c319975655255d389b0e2a19fb88c87786))
+
 ## [2.0.2](https://github.com/TheNaubit/expo-stable-id/compare/v2.0.1...v2.0.2) (2026-09-29)
 
 
