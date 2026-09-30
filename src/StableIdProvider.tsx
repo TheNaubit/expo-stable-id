@@ -1,7 +1,14 @@
-import React, { createContext, useContext, useEffect, useState, useSyncExternalStore, useCallback } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useSyncExternalStore,
+  useCallback,
+} from 'react';
 
-import type { StableIdConfig } from './StableId.types';
 import { getSharedStore } from './StableId';
+import type { StableIdConfig } from './StableId.types';
 import type { StableIdStore } from './StableIdStore';
 
 const StableIdContext = createContext<StableIdStore | null>(null);
@@ -18,27 +25,25 @@ export function StableIdProvider({ config, children }: StableIdProviderProps) {
 
   useEffect(() => {
     let disposed = false;
-    store.configure(config).then(() => {
-      if (!disposed) {
-        setReady(true);
-      }
-    }).catch(() => {
-      // configure() failed - store remains unconfigured, getId() returns null
-    });
+    store
+      .configure(config)
+      .then(() => {
+        if (!disposed) {
+          setReady(true);
+        }
+      })
+      .catch(() => {
+        // configure() failed - store remains unconfigured, getId() returns null
+      });
     return () => {
       // The store is app-wide (shared with the functional API), so it is not disposed here
       disposed = true;
     };
     // config is intentionally excluded: configure() is idempotent (only first call takes effect).
     // Including config would cause dispose/re-configure cycles on unstable object references.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [store]);
 
-  return (
-    <StableIdContext.Provider value={store}>
-      {children}
-    </StableIdContext.Provider>
-  );
+  return <StableIdContext.Provider value={store}>{children}</StableIdContext.Provider>;
 }
 
 export function useStableIdStore(): StableIdStore {
@@ -52,10 +57,7 @@ export function useStableIdStore(): StableIdStore {
 export function useStableIdSnapshot(): string | null {
   const store = useStableIdStore();
 
-  const subscribe = useCallback(
-    (listener: () => void) => store.subscribe(listener),
-    [store]
-  );
+  const subscribe = useCallback((listener: () => void) => store.subscribe(listener), [store]);
 
   const getSnapshot = useCallback(() => store.getId(), [store]);
 

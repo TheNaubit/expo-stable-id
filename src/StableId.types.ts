@@ -18,7 +18,4 @@ export interface StableIdChangeEvent {
   readonly source: ChangeSource;
 }
 
-export type WillChangeHandler = (
-  currentId: string,
-  candidateId: string
-) => string | null;
+export type WillChangeHandler = (currentId: string, candidateId: string) => string | null;

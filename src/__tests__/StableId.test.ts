@@ -1,3 +1,15 @@
+import {
+  configure,
+  getId,
+  identify,
+  generateNewId,
+  isConfigured,
+  hasStoredId,
+  addChangeListener,
+  setWillChangeHandler,
+  _resetForTesting,
+} from '../StableId';
+
 let mockCloudStore: Record<string, string> = {};
 let mockSecureStore: Record<string, string> = {};
 
@@ -26,18 +38,6 @@ jest.mock('../generators/IDGenerator', () => {
     ShortIDGenerator: jest.fn(),
   };
 });
-
-import {
-  configure,
-  getId,
-  identify,
-  generateNewId,
-  isConfigured,
-  hasStoredId,
-  addChangeListener,
-  setWillChangeHandler,
-  _resetForTesting,
-} from '../StableId';
 
 beforeEach(() => {
   _resetForTesting();
