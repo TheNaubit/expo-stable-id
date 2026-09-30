@@ -13,3 +13,6 @@ CHANGELOG.md
 /coverage/
 /example/
 /src/
+
+/.prettierrc
+/eslint.config.js

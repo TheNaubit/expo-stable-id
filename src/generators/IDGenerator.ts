@@ -17,9 +17,10 @@ export class ShortIDGenerator implements IDGenerator {
     while (result.length < 8) {
       const bytes = new Uint8Array(16);
       getRandomValues(bytes);
-      for (let i = 0; i < bytes.length && result.length < 8; i++) {
-        if (bytes[i] < REJECT_THRESHOLD) {
-          result += ALPHANUMERIC[bytes[i] % ALPHANUMERIC.length];
+      for (const byte of bytes) {
+        if (result.length >= 8) break;
+        if (byte < REJECT_THRESHOLD) {
+          result += ALPHANUMERIC.charAt(byte % ALPHANUMERIC.length);
         }
       }
     }

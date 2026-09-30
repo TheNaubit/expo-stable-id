@@ -1,6 +1,16 @@
 import React from 'react';
 import TestRenderer from 'react-test-renderer';
 
+import {
+  _resetForTesting,
+  getId,
+  identify,
+  setWillChangeHandler,
+  addChangeListener,
+} from '../StableId';
+import { StableIdProvider } from '../StableIdProvider';
+import { useStableId } from '../useStableId';
+
 (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
 
 let mockCloudStore: Record<string, string> = {};
@@ -42,23 +52,14 @@ jest.mock('../generators/IDGenerator', () => {
   };
 });
 
-import { StableIdProvider } from '../StableIdProvider';
-import { useStableId } from '../useStableId';
-import {
-  _resetForTesting,
-  getId,
-  identify,
-  setWillChangeHandler,
-  addChangeListener,
-} from '../StableId';
-
 const originalConsoleError = console.error;
 beforeAll(() => {
   console.error = (...args: unknown[]) => {
-    if (typeof args[0] === 'string' && (
-      args[0].includes('react-test-renderer is deprecated') ||
-      args[0].includes('inside a test was not wrapped in act')
-    )) {
+    if (
+      typeof args[0] === 'string' &&
+      (args[0].includes('react-test-renderer is deprecated') ||
+        args[0].includes('inside a test was not wrapped in act'))
+    ) {
       return;
     }
     originalConsoleError(...args);
@@ -85,11 +86,7 @@ function renderHook<T>(useHook: () => T) {
   let renderer: TestRenderer.ReactTestRenderer;
   TestRenderer.act(() => {
     renderer = TestRenderer.create(
-      React.createElement(
-        StableIdProvider,
-        null,
-        React.createElement(TestComponent)
-      )
+      React.createElement(StableIdProvider, null, React.createElement(TestComponent))
     );
   });
   return {
@@ -121,9 +118,7 @@ describe('StableIdProvider', () => {
   test('keeps one shared cloud subscription across unmount and remount', async () => {
     let renderer: TestRenderer.ReactTestRenderer;
     TestRenderer.act(() => {
-      renderer = TestRenderer.create(
-        React.createElement(StableIdProvider, null, null)
-      );
+      renderer = TestRenderer.create(React.createElement(StableIdProvider, null, null));
     });
     await flushPromises();
     expect(mockCloudListeners.length).toBe(1);
@@ -194,7 +189,6 @@ describe('useStableId', () => {
     expect(result.current[0]).toBe('cloud-synced-value');
   });
 });
-
 
 describe('provider and functional API share one store', () => {
   test('hook and getId() return the same id', async () => {

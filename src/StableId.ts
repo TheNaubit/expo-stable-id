@@ -44,9 +44,9 @@ export function hasStoredId(): Promise<boolean> {
   return getSharedStore().hasStoredId();
 }
 
-export function addChangeListener(
-  callback: (event: StableIdChangeEvent) => void
-): { remove: () => void } {
+export function addChangeListener(callback: (event: StableIdChangeEvent) => void): {
+  remove: () => void;
+} {
   const unsubscribe = getConfiguredStore().addChangeListener(callback);
   return { remove: unsubscribe };
 }

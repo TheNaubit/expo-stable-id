@@ -1,3 +1,12 @@
+import {
+  getString as cloudGetString,
+  setString as cloudSetString,
+  addChangeListener as cloudAddChangeListener,
+} from '@nauverse/expo-cloud-settings';
+import { getItemAsync, setItemAsync } from 'expo-secure-store';
+
+import { StableIdStore } from '../StableIdStore';
+
 type ListenerCallback = (event: { changedKeys: string[]; reason: string }) => void;
 const mockCloudListeners: ListenerCallback[] = [];
 let mockCloudStore: Record<string, string> = {};
@@ -39,10 +48,6 @@ jest.mock('../generators/IDGenerator', () => {
     __mockGenerate: mockGenerate,
   };
 });
-
-import { StableIdStore } from '../StableIdStore';
-import { getString as cloudGetString, setString as cloudSetString, addChangeListener as cloudAddChangeListener } from '@nauverse/expo-cloud-settings';
-import { getItemAsync, setItemAsync } from 'expo-secure-store';
 
 const mockGenerateModule = jest.requireMock('../generators/IDGenerator');
 
@@ -351,8 +356,12 @@ describe('StableIdStore', () => {
     test('identify throws a clear error on non-string input', async () => {
       const store = new StableIdStore();
       await store.configure();
-      expect(() => store.identify(123 as unknown as string)).toThrow('id must be a non-empty string');
-      expect(() => store.identify(undefined as unknown as string)).toThrow('id must be a non-empty string');
+      expect(() => store.identify(123 as unknown as string)).toThrow(
+        'id must be a non-empty string'
+      );
+      expect(() => store.identify(undefined as unknown as string)).toThrow(
+        'id must be a non-empty string'
+      );
       store.dispose();
     });
 

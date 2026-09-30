@@ -1,28 +1,29 @@
 import { ExpoConfig } from 'expo/config';
 import { withEntitlementsPlist } from 'expo/config-plugins';
 
-jest.mock('@nauverse/expo-cloud-settings/app.plugin', () => {
-  const { withEntitlementsPlist: mockWithEntitlements } = require('expo/config-plugins');
+jest.mock(
+  '@nauverse/expo-cloud-settings/app.plugin',
+  () => {
+    const { withEntitlementsPlist: mockWithEntitlements } = require('expo/config-plugins');
 
-  return function mockCloudSettingsPlugin(config: any, options: any = {}) {
-    if (
-      options.containerIdentifier !== undefined &&
-      (typeof options.containerIdentifier !== 'string' ||
-        options.containerIdentifier.trim().length === 0)
-    ) {
-      throw new Error(
-        'expo-cloud-settings: containerIdentifier must be a non-empty string'
-      );
-    }
+    return function mockCloudSettingsPlugin(config: any, options: any = {}) {
+      if (
+        options.containerIdentifier !== undefined &&
+        (typeof options.containerIdentifier !== 'string' ||
+          options.containerIdentifier.trim().length === 0)
+      ) {
+        throw new Error('expo-cloud-settings: containerIdentifier must be a non-empty string');
+      }
 
-    return mockWithEntitlements(config, (mod: any) => {
-      mod.modResults['com.apple.developer.ubiquity-kvstore-identifier'] =
-        options.containerIdentifier ??
-        '$(TeamIdentifierPrefix)$(CFBundleIdentifier)';
-      return mod;
-    });
-  };
-}, { virtual: true });
+      return mockWithEntitlements(config, (mod: any) => {
+        mod.modResults['com.apple.developer.ubiquity-kvstore-identifier'] =
+          options.containerIdentifier ?? '$(TeamIdentifierPrefix)$(CFBundleIdentifier)';
+        return mod;
+      });
+    };
+  },
+  { virtual: true }
+);
 
 jest.mock('expo/config-plugins', () => ({
   withEntitlementsPlist: jest.fn((config, callback) => {
@@ -64,14 +65,14 @@ describe('config plugin', () => {
   });
 
   test('throws on empty containerIdentifier', () => {
-    expect(() =>
-      withStableId(baseConfig, { containerIdentifier: '' })
-    ).toThrow('containerIdentifier must be a non-empty string');
+    expect(() => withStableId(baseConfig, { containerIdentifier: '' })).toThrow(
+      'containerIdentifier must be a non-empty string'
+    );
   });
 
   test('throws on whitespace-only containerIdentifier', () => {
-    expect(() =>
-      withStableId(baseConfig, { containerIdentifier: '   ' })
-    ).toThrow('containerIdentifier must be a non-empty string');
+    expect(() => withStableId(baseConfig, { containerIdentifier: '   ' })).toThrow(
+      'containerIdentifier must be a non-empty string'
+    );
   });
 });

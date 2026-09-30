@@ -1,16 +1,9 @@
-interface Subscription {
-  remove: () => void;
-}
-
 import {
   getString as cloudGetString,
   setString as cloudSetString,
   addChangeListener as cloudAddChangeListener,
 } from '@nauverse/expo-cloud-settings';
-import {
-  getItemAsync as secureGetItem,
-  setItemAsync as secureSetItem,
-} from 'expo-secure-store';
+import { getItemAsync as secureGetItem, setItemAsync as secureSetItem } from 'expo-secure-store';
 
 import type {
   IDGenerator,
@@ -21,6 +14,10 @@ import type {
   WillChangeHandler,
 } from './StableId.types';
 import { StandardGenerator } from './generators/IDGenerator';
+
+interface Subscription {
+  remove: () => void;
+}
 
 type Listener = () => void;
 type ChangeCallback = (event: StableIdChangeEvent) => void;
