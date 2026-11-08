@@ -1,3 +1,10 @@
+## [2.0.4](https://github.com/TheNaubit/expo-stable-id/compare/v2.0.3...v2.0.4) (2026-11-08)
+
+
+### Bug Fixes
+
+* **deps:** update dependencies, resolve security alerts and support Expo SDK 58 ([22be423](https://github.com/TheNaubit/expo-stable-id/commit/22be42370806be62e9c28bbc9a2fc63c92215257)), closes [#11](https://github.com/TheNaubit/expo-stable-id/issues/11) [#4](https://github.com/TheNaubit/expo-stable-id/issues/4) [#5](https://github.com/TheNaubit/expo-stable-id/issues/5) [#9](https://github.com/TheNaubit/expo-stable-id/issues/9) [#10](https://github.com/TheNaubit/expo-stable-id/issues/10) [#12](https://github.com/TheNaubit/expo-stable-id/issues/12) [#13](https://github.com/TheNaubit/expo-stable-id/issues/13) [#7](https://github.com/TheNaubit/expo-stable-id/issues/7)
+
 ## [2.0.3](https://github.com/TheNaubit/expo-stable-id/compare/v2.0.2...v2.0.3) (2026-09-30)
 
 
